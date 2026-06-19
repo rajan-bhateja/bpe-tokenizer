@@ -77,9 +77,7 @@ def build_frequency_table(corpus: str) -> dict[tuple[int, ...], int]:
     return frequency_table
 
 
-def get_pair_counts(
-    frequency_table: dict[tuple[int, ...], int]
-) -> dict[tuple[int, int], int]:
+def get_pair_counts(frequency_table: dict[tuple[int, ...], int]) -> dict[tuple[int, int], int]:
     """Counts the frequency of every adjacent pair of token IDs across all sequences."""
     pair_counts: dict[tuple[int, int], int] = {}
 
@@ -92,10 +90,10 @@ def get_pair_counts(
 
 
 def merge_sequence(
-    sequence: tuple[int, ...],
-    pair: tuple[int, int],
-    new_id: int
-) -> tuple[int, ...]:
+        sequence: tuple[int, ...],
+        pair: tuple[int, int],
+        new_id: int
+    ) -> tuple[int, ...]:
     """Replaces all occurrences of the given adjacent pair in a sequence with new_id."""
     result = []
     i = 0
@@ -111,9 +109,9 @@ def merge_sequence(
 
 
 def train(
-    frequency_table: dict[tuple[int, ...], int],
-    vocab_size: int
-) -> tuple[dict[tuple[int, int], int], dict[int, bytes]]:
+        frequency_table: dict[tuple[int, ...], int],
+        vocab_size: int
+    ) -> tuple[dict[tuple[int, int], int], dict[int, bytes]]:
     """Runs the BPE merge loop and returns the merge table and final vocabulary."""
     vocab: dict[int, bytes] = {i: bytes([i]) for i in range(256)}
     merges: dict[tuple[int, int], int] = {}
@@ -161,10 +159,10 @@ def train(
 
 
 def save_tokenizer(
-    merges: dict[tuple[int, int], int],
-    vocab: dict[int, bytes],
-    output_path: str
-) -> None:
+        merges: dict[tuple[int, int], int],
+        vocab: dict[int, bytes],
+        output_path: str
+    ) -> None:
     """Serializes the vocabulary to a token-centric JSON file."""
     try:
         # Build a reverse lookup: token_id -> (id_a, id_b) that produced it
@@ -216,22 +214,31 @@ def init_training_pipeline() -> None:
     """Initializes the training pipeline by loading, reading, and processing the training data."""
     LOGGER.info("Initializing training pipeline...")
 
+    # Step 1: Load books
     books_list, n_books = load_books(TRAINING_DATA_DIR)
     LOGGER.info(f"Loaded {n_books} book(s) for training: {books_list}")
 
+    # Exit if no books were found
     if n_books == 0:
-        LOGGER.error("No books to process. Exiting pipeline.")
+        LOGGER.error("No books found for training. Please add .txt files to the 'books' directory and try again.")
         return
 
+    # Step 2: Read books and create corpus
     corpus = read_books(books_list, TRAINING_DATA_DIR)
     LOGGER.info(f"Combined corpus created with {len(corpus)} characters.")
 
+    # Exit if corpus is empty after reading all books
     if not corpus:
         LOGGER.error("Corpus is empty after reading all books. Exiting pipeline.")
         return
 
+    # Step 3: Build frequency table
     frequency_table = build_frequency_table(corpus)
+
+    # Step 4: Train BPE tokenizer
     merges, vocab = train(frequency_table, VOCAB_SIZE)
+
+    # Step 5: Save tokenizer to JSON
     save_tokenizer(merges, vocab, MODEL_OUTPUT_PATH)
 
 

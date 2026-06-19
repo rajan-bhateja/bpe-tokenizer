@@ -1,1 +1,6 @@
 regex
+fastapi
+uvicorn
+pydantic
+typing
+contextlib
