@@ -46,8 +46,8 @@ def decode(token_ids: list[int], vocab: dict[int, bytes]) -> str:
     byte_chunks: list[bytes] = []
     for token_id in token_ids:
         if token_id not in vocab:
-            LOGGER.error(f"Unknown token ID encountered during decoding: {token_id}. Returning empty string ('').")
-            return ""
+            LOGGER.error(f"Unknown token ID encountered during decoding: {token_id}")
+            raise ValueError(f"Unknown token ID: {token_id}")
 
         byte_chunks.append(vocab[token_id])
 
