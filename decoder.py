@@ -37,11 +37,11 @@ def load_vocab(tokenizer_path: str) -> dict[int, bytes]:
         raise
 
 
-def decode(token_ids: list[int], vocab: dict[int, bytes]) -> str:
+def decode(token_ids: list[int], vocab: dict[int, bytes]) -> list[str]:
     """Decodes a list of token IDs back into the original text string."""
     if not token_ids:
-        LOGGER.warning("Received an empty token ID list. Returning empty string ('').")
-        return ""
+        LOGGER.warning("Received an empty token ID list. Returning empty list ([]).")
+        return []
 
     byte_chunks: list[bytes] = []
     for token_id in token_ids:
@@ -51,11 +51,8 @@ def decode(token_ids: list[int], vocab: dict[int, bytes]) -> str:
 
         byte_chunks.append(vocab[token_id])
 
-    # Concatenate all bytes first, then decode once.
-    # This correctly handles multi-byte UTF-8 characters that may have been
-    # split across two separate tokens during encoding.
-    full_bytes = b"".join(byte_chunks)
-    text = full_bytes.decode("utf-8", errors="replace")
+    # Decode each byte into UTF-8 characters to return as a list[str]
+    text = [chunk.decode("utf-8", errors="replace") for chunk in byte_chunks]
 
     return text
 

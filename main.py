@@ -1,14 +1,21 @@
 import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Any
+from typing import Any, Annotated
 from logger import get_logger
+
+from decoder import load_vocab, decode as decode_tokens
 
 
 # CONSTANTS
 TOKENIZER_MODEL_PATH = "tokenizer.json"
+
+with open(TOKENIZER_MODEL_PATH, "r", encoding="utf-8") as f:
+    tokenizer_data = json.load(f)
+
+N_VOCAB = int(tokenizer_data["vocab_size"] - 1)
 
 
 # Set up logging
@@ -18,37 +25,22 @@ LOGGER = get_logger(__name__)
 # Classes for input validation
 class EncodeRequest(BaseModel):
     """Request model for encoding text."""
-    text: str
+    text: Annotated[str, Field(description="Text string to encode", min_length=1)]
 
 
 class DecodeRequest(BaseModel):
     """Request model for decoding token IDs."""
-    token_ids: list[int]
-
-
-async def load_tokenizer() -> None:
-    """Loads the trained BPE tokenizer from the JSON file."""
-    try:
-        global tokenizer
-        tokenizer = None
-        if TOKENIZER_MODEL_PATH:
-            LOGGER.info(f"Loading tokenizer from '{TOKENIZER_MODEL_PATH}'...")
-            with open(TOKENIZER_MODEL_PATH, "r", encoding="utf-8") as f:
-                tokenizer_data = json.load(f)
-                app.state.tokenizer = tokenizer_data
-            LOGGER.info("Tokenizer loaded successfully.")
-
-    except FileNotFoundError:
-        LOGGER.error(f"Tokenizer file '{TOKENIZER_MODEL_PATH}' not found. Please train the tokenizer first.")
-    except json.JSONDecodeError:
-        LOGGER.error(f"Tokenizer file '{TOKENIZER_MODEL_PATH}' is not a valid JSON. Please check the file.")
-
+    token_ids: list[Annotated[int, Field(description="List of token IDs to decode", ge=0, le=N_VOCAB)]]
+   
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan event handler for FastAPI app"""
     LOGGER.info("Starting FastAPI app...")
-    await load_tokenizer()
+    app.state.vocab = load_vocab(TOKENIZER_MODEL_PATH)
+    if not app.state.vocab:
+        LOGGER.error("Failed to load tokenizer. Shutting down...")
+        return
     yield
     LOGGER.info("Shutting down FastAPI app...")
 
@@ -73,9 +65,14 @@ async def encode(encode_request: EncodeRequest) -> dict[str, Any]:
 async def decode(decode_request: DecodeRequest) -> dict[str, Any]:
     """Decodes a list of token IDs back into the original text using the trained BPE tokenizer."""
     LOGGER.info(f"Token IDs received for decoding: {decode_request.token_ids}")
+    LOGGER.info(f"Decoding {len(decode_request.token_ids)} token(s): {decode_request.token_ids}")
+
+    # vocab = load_vocab(TOKENIZER_MODEL_PATH)
+    result = decode_tokens(decode_request.token_ids, app.state.vocab)
+
     response = {
         "input": decode_request.token_ids,
-        "output": "",
+        "output": result,
         "timestamp": datetime.now().isoformat()
     }
     LOGGER.info(f"API response:\n{json.dumps(response, indent=2)}")
