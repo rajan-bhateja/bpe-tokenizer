@@ -1,4 +1,4 @@
-# Byte Pair Encoding (BPE) Tokenizer - train.py Documentation
+# Byte Pair Encoding (BPE) Tokenizer - encoder.py Documentation
 
 ## Overview
 
