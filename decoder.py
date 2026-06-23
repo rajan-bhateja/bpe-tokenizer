@@ -1,4 +1,5 @@
 import json
+import os
 from logger import get_logger
 
 
@@ -7,7 +8,7 @@ LOGGER = get_logger(__name__)
 
 
 # CONSTANTS
-TOKENIZER_PATH = "tokenizer.json"
+TOKENIZER_PATH = os.getenv("TOKENIZER_PATH", "tokenizer.json")
 
 
 def load_vocab(tokenizer_path: str) -> dict[int, bytes]:

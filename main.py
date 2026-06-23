@@ -1,16 +1,19 @@
 import json
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Any, Annotated
-from logger import get_logger
 
+from logger import get_logger
 from decoder import load_vocab, decode as decode_tokens
+from encoder import load_merges, encode as encode_text
 
 
 # CONSTANTS
 TOKENIZER_MODEL_PATH = "tokenizer.json"
+TOKENIZER_PATH = os.getenv("TOKENIZER_PATH", "tokenizer.json")
 
 with open(TOKENIZER_MODEL_PATH, "r", encoding="utf-8") as f:
     tokenizer_data = json.load(f)
@@ -52,9 +55,16 @@ app = FastAPI(lifespan=lifespan)
 async def encode(encode_request: EncodeRequest) -> dict[str, Any]:
     """Encodes the input text using the trained BPE tokenizer and returns a list of token IDs."""
     LOGGER.info(f"Text received for encoding: {encode_request.text}")
+    LOGGER.info(f"Encoding '{encode_request.text}'...")
+
+    merges = load_merges(TOKENIZER_MODEL_PATH)
+    tokenized_text = encode_text(encode_request.text, merges)
+    n_tokens = len(tokenized_text)
+
     response = {
         "input": encode_request.text,
-        "output": [],
+        "output": tokenized_text,
+        "token_count": n_tokens,
         "timestamp": datetime.now().isoformat()
     }
     LOGGER.info(f"API response:\n{json.dumps(response, indent=2)}")
