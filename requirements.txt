@@ -3,4 +3,4 @@ fastapi
 uvicorn
 pydantic
 typing
-contextlib
+python-multipart
