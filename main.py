@@ -15,6 +15,7 @@ from encoder import load_merges, encode as encode_text
 TOKENIZER_MODEL_PATH = "tokenizer.json"
 TOKENIZER_PATH = os.getenv("TOKENIZER_PATH", "tokenizer.json")
 
+
 with open(TOKENIZER_MODEL_PATH, "r", encoding="utf-8") as f:
     tokenizer_data = json.load(f)
 
@@ -34,7 +35,7 @@ class EncodeRequest(BaseModel):
 class DecodeRequest(BaseModel):
     """Request model for decoding token IDs."""
     token_ids: list[Annotated[int, Field(description="List of token IDs to decode", ge=0, le=N_VOCAB)]]
-   
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -77,7 +78,6 @@ async def decode(decode_request: DecodeRequest) -> dict[str, Any]:
     LOGGER.info(f"Token IDs received for decoding: {decode_request.token_ids}")
     LOGGER.info(f"Decoding {len(decode_request.token_ids)} token(s): {decode_request.token_ids}")
 
-    # vocab = load_vocab(TOKENIZER_MODEL_PATH)
     result = decode_tokens(decode_request.token_ids, app.state.vocab)
 
     response = {
@@ -85,5 +85,21 @@ async def decode(decode_request: DecodeRequest) -> dict[str, Any]:
         "output": result,
         "timestamp": datetime.now().isoformat()
     }
+    LOGGER.info(f"API response:\n{json.dumps(response, indent=2)}")
+    return response
+
+
+@app.get("/v1/health")
+async def get_health() -> dict[str, Any]:
+    """Returns `status`, `timestamp`, and `tokenizer_found` if `tokenizer.json` is found"""
+    response: dict[str, Any] = {
+        "status": "ok",
+        "timestamp": datetime.now().isoformat()
+    }
+    if app.state.vocab:
+        response["tokenizer_found"] = True
+    else:
+        response["tokenizer_found"] = False
+    
     LOGGER.info(f"API response:\n{json.dumps(response, indent=2)}")
     return response
