@@ -1,8 +1,8 @@
-# Byte Pair Encoding (BPE) Tokenizer - train.py Documentation
+# Byte Pair Encoding (BPE) Tokenizer - encoder.py Documentation
 
 ## Overview
 
-`train.py` implements a **Byte Pair Encoding (BPE)** tokenizer trainer. BPE is a data compression algorithm that iteratively merges the most frequent pair of consecutive bytes/tokens into a single new token. This process is commonly used in large language models (like GPT-2/3) to create efficient vocabularies that balance vocabulary size with compression effectiveness.
+`encoder.py` implements a **Byte Pair Encoding (BPE)** tokenizer trainer. BPE is a data compression algorithm that iteratively merges the most frequent pair of consecutive bytes/tokens into a single new token. This process is commonly used in large language models (like GPT-2/3) to create efficient vocabularies that balance vocabulary size with compression effectiveness.
 
 ## Algorithm Summary
 
